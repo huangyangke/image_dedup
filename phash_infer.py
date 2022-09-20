@@ -34,6 +34,7 @@ for i in range(len(encodings)):
     for j in range(i+1, len(encodings)):
         en2=bin(int(encodings[j],16))
         cnt = 0
+        #从第二个字符串开始比较 因为16进制前两个字符是0b
         for k in range(2, len(en)):
             #简单的判断下有几个字符串相等
             if en[k] == en2[k]:
