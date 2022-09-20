@@ -66,9 +66,8 @@ def letterbox(im, new_shape=(224, 224), color=(114, 114, 114), auto=False, scale
     im = cv2.copyMakeBorder(im, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)  # add border
     return im, ratio, (dw, dh)
 
-#加载预训练模型权重 这里去掉动量模型和最后一层fc
+#加载预训练模型权重 这里去掉动量模型
 state_dict = torch.load('/mnt/dl-storage/dg-cephfs-0/public/huangyangke/mocov3/r-50-1000ep.pth.tar')['state_dict']
-linear_keyword = 'fc'
 for k in list(state_dict.keys()):
     # retain only base_encoder up to before the embedding layer
     if k.startswith('module.base_encoder'):
@@ -79,8 +78,10 @@ for k in list(state_dict.keys()):
 
 #模型初始化
 model = torchvision_models.__dict__['resnet50']()
-model.fc = _build_mlp(2, 2048, 4096, 256)
-model.load_state_dict(state_dict, strict=True)
+#model.fc = _build_mlp(2, 2048, 4096, 256)
+#发现加上project效果反而不好，这里直接用2048维向量
+model.fc = nn.Identity()
+model.load_state_dict(state_dict, strict=False)
 
 # x = torch.empty(1,3,224,224)
 # model.eval()
@@ -91,28 +92,44 @@ normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0
 
 augmentation = transforms.Compose([
     #transforms.CenterCrop(224),
+    transforms.Resize([224, 224]),
     transforms.ToTensor(),
     normalize
 ])
 
-image1 = cv2.imread('/mnt/dl-storage/dg-cephfs-0/openai/cv-team/luxiangzhe/lofter/img_dupicate/cnn_target_imgs_5/104/YkhpaWFOalhaWEtmV29aZG1laitjUTJQZUFPZlcwMDRjNVRHdXFsVkU1ZXA5aUxGeGZXdUR3PT0.jpg')[:,:,::-1]
-image1 = letterbox(image1,new_shape=(224, 224))[0]
-image1 = Image.fromarray(image1)
-image1 = augmentation(image1).unsqueeze(0)
+# image1 = cv2.imread('/mnt/dl-storage/dg-cephfs-0/openai/cv-team/luxiangzhe/lofter/img_dupicate/cnn_target_imgs_5/104/YkhpaWFOalhaWEtmV29aZG1laitjUTJQZUFPZlcwMDRjNVRHdXFsVkU1ZXA5aUxGeGZXdUR3PT0.jpg')[:,:,::-1]
+# #image1 = letterbox(image1,new_shape=(224, 224))[0]
+# image1 = Image.fromarray(image1)
+# image1 = augmentation(image1).unsqueeze(0)
 
-image2 = cv2.imread('/mnt/dl-storage/dg-cephfs-0/openai/cv-team/luxiangzhe/lofter/img_dupicate/cnn_target_imgs_5/104/YkhpaWFOalhaWEtmV29aZG1laitjV1hiTWVnWGFlVEhWeTlDK3E2d3Y0d1BJSDZoTFNsZ3JnPT0.jpg')[:,:,::-1]
-image2 = letterbox(image2,new_shape=(224, 224))[0]
-image2 = Image.fromarray(image2)
-image2 = augmentation(image2).unsqueeze(0)
+# image2 = cv2.imread('/mnt/dl-storage/dg-cephfs-0/openai/cv-team/luxiangzhe/lofter/img_dupicate/cnn_target_imgs_5/104/YkhpaWFOalhaWEtmV29aZG1laitjV1hiTWVnWGFlVEhWeTlDK3E2d3Y0d1BJSDZoTFNsZ3JnPT0.jpg')[:,:,::-1]
+# #image2 = letterbox(image2,new_shape=(224, 224))[0]
+# image2 = Image.fromarray(image2)
+# image2 = augmentation(image2).unsqueeze(0)
 
-model.eval()
-with torch.no_grad():
-    #print(torch.sum(image1 - image2))
-    output1 = model(image1)
-    output2 = model(image2)
-    q = nn.functional.normalize(output1, dim=1)
-    k = nn.functional.normalize(output2, dim=1)
-    #print(torch.sum(q - k))
-    #logits = torch.einsum('nc,mc->nm', [q, k])[0]
-    logits = (torch.einsum('nc,mc->nm', [q, k])[0] + 1) / 2 #归一化到0-1
-    print(logits)
+# model.eval()
+# with torch.no_grad():
+#     #print(torch.sum(image1 - image2))
+#     output1 = model(image1)
+#     output2 = model(image2)
+#     q = nn.functional.normalize(output1, dim=1)
+#     k = nn.functional.normalize(output2, dim=1)
+#     #print(torch.sum(q - k))
+#     #logits = torch.einsum('nc,mc->nm', [q, k])[0]
+#     logits = (torch.einsum('nc,mc->nm', [q, k])[0] + 1) / 2 #归一化到0-1
+#     print(logits)
+    
+outputs = []
+with open("/mnt/dl-storage/dg-cephfs-0/public/huangyangke/mocov3/images_path.txt",'r',encoding = 'utf-8') as f:
+    images_path = f.readlines()[:5000]
+    for image in tqdm(images_path):
+        image = image.strip()
+        image = cv2.imread(image)[:,:,::-1]
+        #image = letterbox(image,new_shape=(224, 224))[0]
+        image = Image.fromarray(image)
+        image = augmentation(image).unsqueeze(0).cuda()
+        with torch.no_grad():
+            output = model(image)
+            output = nn.functional.normalize(output, dim=1)
+            outputs.append(output)
+torch.save(torch.cat(outputs, dim = 0).cpu(), 'embedding.tensor')
