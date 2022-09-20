@@ -113,5 +113,6 @@ with torch.no_grad():
     q = nn.functional.normalize(output1, dim=1)
     k = nn.functional.normalize(output2, dim=1)
     #print(torch.sum(q - k))
-    logits = torch.einsum('nc,mc->nm', [q, k])[0]
+    #logits = torch.einsum('nc,mc->nm', [q, k])[0]
+    logits = (torch.einsum('nc,mc->nm', [q, k])[0] + 1) / 2 #归一化到0-1
     print(logits)
