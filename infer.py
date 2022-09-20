@@ -3,6 +3,9 @@ import torch.nn as nn
 import torch.utils.data
 import torchvision.transforms as transforms
 import torchvision.models as torchvision_models
+import cv2
+import numpy as np
+from PIL import Image
 
 def _build_mlp(num_layers, input_dim, mlp_dim, output_dim, last_bn=True):
     mlp = []
@@ -60,7 +63,7 @@ def letterbox(im, new_shape=(224, 224), color=(114, 114, 114), auto=False, scale
     im = cv2.copyMakeBorder(im, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)  # add border
     return im, ratio, (dw, dh)
 
-state_dict = torch.load('/home/test/huangyangke/code/mocov3/r-50-1000ep.pth.tar')['state_dict']
+state_dict = torch.load('/mnt/dl-storage/dg-cephfs-0/public/huangyangke/mocov3/r-50-1000ep.pth.tar')['state_dict']
 linear_keyword = 'fc'
 for k in list(state_dict.keys()):
     # retain only base_encoder up to before the embedding layer
@@ -86,12 +89,12 @@ augmentation = transforms.Compose([
     normalize
 ])
 
-image1 = cv2.imread('/home/test/huangyangke/code/mocov3/5.jpg')[:,:,::-1]
+image1 = cv2.imread('/mnt/dl-storage/dg-cephfs-0/openai/cv-team/luxiangzhe/lofter/img_dupicate/cnn_target_imgs_5/104/YkhpaWFOalhaWEtmV29aZG1laitjUTJQZUFPZlcwMDRjNVRHdXFsVkU1ZXA5aUxGeGZXdUR3PT0.jpg')[:,:,::-1]
 image1 = letterbox(image1,new_shape=(224, 224))[0]
 image1 = Image.fromarray(image1)
 image1 = augmentation(image1).unsqueeze(0)
 
-image2 = cv2.imread('/home/test/huangyangke/code/mocov3/6.jpg')[:,:,::-1]
+image2 = cv2.imread('/mnt/dl-storage/dg-cephfs-0/openai/cv-team/luxiangzhe/lofter/img_dupicate/cnn_target_imgs_5/104/YkhpaWFOalhaWEtmV29aZG1laitjV1hiTWVnWGFlVEhWeTlDK3E2d3Y0d1BJSDZoTFNsZ3JnPT0.jpg')[:,:,::-1]
 image2 = letterbox(image2,new_shape=(224, 224))[0]
 image2 = Image.fromarray(image2)
 image2 = augmentation(image2).unsqueeze(0)
