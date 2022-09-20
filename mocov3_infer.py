@@ -7,6 +7,7 @@ import cv2
 import numpy as np
 from PIL import Image
 
+#构建两层project 用来替换resnet原来的分类fc，抽取256维度特征
 def _build_mlp(num_layers, input_dim, mlp_dim, output_dim, last_bn=True):
     mlp = []
     for l in range(num_layers):
@@ -53,6 +54,8 @@ def letterbox(im, new_shape=(224, 224), color=(114, 114, 114), auto=False, scale
 
 #     dw /= 2  # divide padding into 2 sides
 #     dh /= 2
+
+    #不进行padding
     dw = 0
     dh = 0
 
@@ -63,6 +66,7 @@ def letterbox(im, new_shape=(224, 224), color=(114, 114, 114), auto=False, scale
     im = cv2.copyMakeBorder(im, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)  # add border
     return im, ratio, (dw, dh)
 
+#加载预训练模型权重 这里去掉动量模型和最后一层fc
 state_dict = torch.load('/mnt/dl-storage/dg-cephfs-0/public/huangyangke/mocov3/r-50-1000ep.pth.tar')['state_dict']
 linear_keyword = 'fc'
 for k in list(state_dict.keys()):
@@ -72,10 +76,12 @@ for k in list(state_dict.keys()):
         state_dict[k[len("module.base_encoder."):]] = state_dict[k]
     # delete renamed or unused k
     del state_dict[k]
-    
+
+#模型初始化
 model = torchvision_models.__dict__['resnet50']()
 model.fc = _build_mlp(2, 2048, 4096, 256)
 model.load_state_dict(state_dict, strict=True)
+
 # x = torch.empty(1,3,224,224)
 # model.eval()
 # with torch.no_grad():
