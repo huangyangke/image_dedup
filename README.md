@@ -12,3 +12,8 @@
 #### clip_infer.py
 通过clip的视觉模型抽取图像特征<br/>
 依赖于clip库，https://github.com/openai/CLIP，使用需要下载<br/>
+
+phash（向哲使用的图片去重算法）：能够检测出非常相似的图片<br/>
+mocov3（视频指纹使用的图片去重算法）：能够检测出较为相似的图片<br/>
+clip：能够检测出语义上相似的图片<br/>
+总结：检索能力逐级上升，clip>mocov3>phash，可以根据不同的业务场景选择不同的算法。<br/>
