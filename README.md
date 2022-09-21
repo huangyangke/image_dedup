@@ -8,3 +8,7 @@
 其中相似度判断通过简单的元素比对进行判断<br/>
 算法实现from：https://github.com/idealo/imagededup<br/>
 优化点：可以通过其他距离判断方法<br/>
+
+#### clip_infer.py
+通过clip的视觉模型抽取图像特征<br/>
+依赖于clip库，https://github.com/openai/CLIP，使用需要下载<br/>
