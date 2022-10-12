@@ -11,7 +11,7 @@
 
 #### clip_infer.py
 通过clip的视觉模型抽取图像特征<br/>
-依赖于clip库，https://github.com/openai/CLIP，使用需要下载<br/>
+依赖于clip库，https://github.com/openai/CLIP<br/>
 
 #### 算法总结
 phash（向哲使用的图片去重算法）：能够检测出非常相似的图片<br/>
